@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta property="og:title" content="Música ao vivo kkkkk por Golden" />
+  <meta property="og:description" content="Rádio pirata rodando 24/7. Só as braba." />
+  <meta property="og:image" content="https://raw.githubusercontent.com/Golden4484/Golden4484/main/Picsart_25-05-25_14-32-18-645.jpg" />
+  <meta property="og:type" content="video.other" />
+  <meta property="og:video" content="https://raw.githubusercontent.com/Golden4484/Golden4484/main/DJ%20KOALA6%20-%20RITMADA%20PODEROSA.mp3" />
+  <meta property="og:video:type" content="audio/mpeg" />
+  <meta property="og:video:width" content="500" />
+  <meta property="og:video:height" content="300" />
+  <title>Música ao vivo kkkkk por Golden</title>
+</head>
+<body style="background:black; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; color:white;">
+  <h1>Música ao vivo kkkkk</h1>
+  <audio id="player" controls autoplay></audio>
+  <script>
+    const playlist = [
+      'https://raw.githubusercontent.com/Golden4484/Golden4484/main/DJ%20KOALA6%20-%20RITMADA%20PODEROSA.mp3',
+      'https://raw.githubusercontent.com/Golden4484/Golden4484/main/FBC%20-%20Delírios.mp3',
+      'https://raw.githubusercontent.com/Golden4484/Golden4484/main/Veada%20-%20CUpid.mp3'
+    ];
+
+    const player = document.getElementById('player');
+
+    function playRandom() {
+      const randomIndex = Math.floor(Math.random() * playlist.length);
+      player.src = playlist[randomIndex];
+      player.play();
+    }
+
+    player.addEventListener('ended', playRandom);
+
+    playRandom();
+  </script>
+</body>
+    </html>
