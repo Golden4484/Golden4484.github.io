@@ -1,0 +1,138 @@
+import discord
+import requests
+import asyncio
+import threading
+from discord.ext import commands
+
+# ================== TOKENS ==================
+TOKEN = 'TROPA DO RATO, AQUI EM PERNAMBUCO. O RATO QUER FARINHA, JA VAI LIBERANDO A BUCETINHA'
+ELEVEN_API_KEY = 'pBZVCk298iJlHAcHQwLr'
+VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'  # Troca se quiser outra voz clonada
+
+# ================== CONFIGURAÇÃO ==================
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix=".", intents=intents)
+
+voice_client = None
+
+
+# ================== FUNÇÃO GERAR ÁUDIO ==================
+def gerar_audio(texto):
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
+
+    headers = {
+        "xi-api-key": ELEVEN_API_KEY,
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "text": texto,
+        "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.8
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code == 200:
+        with open("fala.mp3", "wb") as f:
+            f.write(response.content)
+    else:
+        print(f"❌ Erro no ElevenLabs: {response.status_code} - {response.text}")
+
+
+# ================== ENTRAR NA CALL ==================
+@bot.command()
+async def vem(ctx):
+    global voice_client
+
+    if ctx.author.voice:
+        canal = ctx.author.voice.channel
+        if ctx.voice_client:
+            await ctx.voice_client.move_to(canal)
+        else:
+            voice_client = await canal.connect()
+        await ctx.send(f"🎧 Entrei na call: {canal}")
+    else:
+        await ctx.send("❌ Você nem tá na call, meu chapa.")
+
+
+# ================== SAIR DA CALL ==================
+@bot.command()
+async def sair(ctx):
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        await ctx.send("👋 Saí da call. Até nunca mais.")
+    else:
+        await ctx.send("❌ Nem tô na call, doido.")
+
+
+# ================== THREAD TERMINAL ==================
+def terminal_listener():
+    global voice_client
+
+    while True:
+        texto = input("🗣️ → ").strip()
+
+        if texto.startswith("!sair"):
+            if voice_client:
+                coro = voice_client.disconnect()
+                fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+                fut.result()
+                print("👋 Saí da call pelo terminal.")
+            else:
+                print("❌ Não tô nem na call, gênio.")
+            continue
+
+        if texto.startswith(".vem"):
+            coro = conectar_na_call()
+            fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+            fut.result()
+            continue
+
+        if texto:
+            if voice_client:
+                gerar_audio(texto)
+                audio_source = discord.FFmpegPCMAudio("fala.mp3")
+                voice_client.play(audio_source)
+                while voice_client.is_playing():
+                    pass
+            else:
+                print("❌ Eu nem tô na call, criatura celestial.")
+
+
+# ================== ENTRAR NA CALL PELO TERMINAL ==================
+async def conectar_na_call():
+    global voice_client
+    guild = discord.utils.get(bot.guilds)
+    member = guild.get_member(bot.user.id)
+
+    if member.voice:
+        canal = member.voice.channel
+    else:
+        for m in guild.members:
+            if m.voice:
+                canal = m.voice.channel
+                break
+        else:
+            print("❌ Ninguém tá na call, nem eu, nem você.")
+            return
+
+    if bot.voice_clients:
+        voice_client = bot.voice_clients[0]
+        await voice_client.move_to(canal)
+    else:
+        voice_client = await canal.connect()
+
+    print(f"🎧 Entrei na call: {canal}")
+
+
+# ================== BOT ON ==================
+@bot.event
+async def on_ready():
+    print(f"✅ Logado como {bot.user}")
+    threading.Thread(target=terminal_listener, daemon=True).start()
+
+
+bot.run(TOKEN)
